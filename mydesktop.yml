@@ -1,0 +1,857 @@
+---
+- name: Desktop setup
+  hosts: 127.0.0.1
+  connection: local
+  become: yes
+  become_method: sudo
+  gather_facts: yes
+
+  vars:
+    users:
+      owner: # Desktop owner
+        name: julien
+        group: julien
+
+    dnf_packages:
+      - dnf-plugins-core
+      - https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-32.noarch.rpm
+      - https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-32.noarch.rpm
+
+    apt_packages:
+      - apt-transport-https
+      - ca-certificates
+      - software-properties-common
+      - gnome-shell-extensions
+
+
+    packages:
+      - zsh
+      - curl
+      - nano
+      - vim
+      - terminator
+      - vagrant
+      - git
+      - tree
+      - htop
+      - make
+      - gcc
+      - vlc
+      - jq
+      - gettext
+      - chrome-gnome-shell
+      #- gnome-shell-extension
+      - gnome-session
+      - gnome-tweak-tool
+      - python-pip
+      - python3-pip
+      - python3-psutil
+      - node
+      - nodejs
+      - npm
+      - yarnpkg
+      - docker-ce
+      - kernel-headers
+      - kernel-devel
+      - gimp
+      - openssh-server
+      - keepassx
+      - cifs-utils
+      - libvirt-daemon-kvm 
+      - qemu-kvm
+      - kubectl
+      - golang
+      - rust
+      - wmctrl # move app to specific workspace
+      - steam
+      - discord
+
+    apt_packages_to_remove:
+      - ubuntu-web-launchers
+      - empathy-common
+      - gbrainy
+      - gnome-games-common
+      - gwibber-service
+      - pidgin
+      - pitivi
+      - transmission-common
+
+    standalone_rpm_package_urls:
+      # VsCode
+      - path_check: "/usr/bin/code"
+        url: "https://go.microsoft.com/fwlink/?LinkID=760867"
+      # Slack
+      - path_check: "/usr/bin/slack"
+        url: "https://downloads.slack-edge.com/linux_releases/slack-3.4.0-0.1.fc21.x86_64.rpm"
+      # VirtualBox
+      - path_check: "/usr/bin/virtualbox"
+        url: "https://download.virtualbox.org/virtualbox/6.1.4/VirtualBox-6.1-6.1.4_136177_fedora31-1.x86_64.rpm"
+      # Zoom
+      - path_check: "/usr/bin/zoom"
+        url: "https://d11yldzmag5yn.cloudfront.net/prod/3.5.385850.0413/zoom_x86_64.rpm?_x_zm_rtaid=8n8mqmS5TB-ABgVc1_hsUg.1587216394577.844d68c02c5b6dad67c05d8c622db398&_x_zm_rhtaid=8"
+      # Skype
+      - path_check: "/usr/bin/skypeforlinux"
+        url: "https://repo.skype.com/latest/skypeforlinux-64.rpm"
+
+    standalone_deb_package_urls:
+      # Chef-dk
+      - path_check: "/usr/bin/kitchen"
+        url: "https://packages.chef.io/files/stable/chefdk/3.3.23/ubuntu/18.04/chefdk_3.3.23-1_amd64.deb"
+      # Atom
+      #- path_check: "/usr/bin/atom"
+      #  url: "https://atom.io/download/deb"
+      # VsCode
+      - path_check: "/usr/bin/code"
+        url: "https://go.microsoft.com/fwlink/?LinkID=760868"
+      # VirtualBox
+      - path_check: "/usr/bin/virtualbox"
+        url: "https://download.virtualbox.org/virtualbox/6.1.4/virtualbox-6.1_6.1.4-136177~Debian~buster_amd64.deb"
+
+    dnf:
+      # Docker-ce
+      - name: "docker-ce"
+        desc: "docker-ce stable"
+        key_url: "https://download.docker.com/linux/{{ansible_distribution | lower}}/gpg"
+        repository: "https://download.docker.com/linux/{{ansible_distribution | lower}}/32/{{ansible_architecture}}/test" # stable
+      #  repository: "https://download.docker.com/linux/{{ansible_distribution | lower}}/{{ansible_distribution_major_version}}/{{ansible_architecture}}/test" # stable
+      # Kubernetes
+      - name: "kubernetes"
+        desc: "kubernetes stable"
+        key_url: "https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpghttps://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64"
+        repository: "https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64" # stable
+
+    apt:
+      # Docker-ce
+      - key_url: "https://download.docker.com/linux/{{ansible_distribution}}/gpg"
+        repository: "deb [arch=amd64] https://download.docker.com/linux/{{ansible_distribution}} {{ansible_distribution_release}} stable"
+      # Sublimetext
+      - key_url: "https://download.sublimetext.com/sublimehq-pub.gpg"
+        repository: "deb https://download.sublimetext.com/ apt/stable/"
+      # Kubernetes
+      - key_url: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
+        repository: "deb https://apt.kubernetes.io/ kubernetes-xenial main"
+      # Proxmox
+      #- key_url: "http://download.proxmox.com/debian/proxmox-ve-release-5.x.gpg"
+      #  repository: "deb http://download.proxmox.com/debian/pve stretch pve-no-subscription"
+
+    binaries:
+      # Vault
+      - "https://releases.hashicorp.com/vault/1.4.0/vault_1.4.0_linux_amd64.zip"
+      # Terraform
+      - "https://releases.hashicorp.com/terraform/0.12.24/terraform_0.12.24_linux_amd64.zip"
+      # Packer
+      - "https://releases.hashicorp.com/packer/1.5.5/packer_1.5.5_linux_amd64.zip"
+
+
+    wallpaper_urls: [
+      "https://img.hebus.com/hebus_2014/08/22/1408726752_36368.jpg",
+      "https://img.hebus.com/hebus_2010/10/29/101029225433_85.jpg",
+      "https://img.hebus.com/tmp/hebus_1920x1200_1587821654_8553.jpg",
+      "https://img.hebus.com/tmp/hebus_1920x1200_1587821686_8545.jpg"
+    ]
+
+    isos:
+      # Debian 9.5
+      - path_check: "debian-9.5.0-amd64-xfce-CD-1.iso"
+        url: "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-9.5.0-amd64-xfce-CD-1.iso"
+        checksum: "sha1:7b1bea76a02d87a7c0317a961b4f989fb1a0d9e8"
+      # Debian 8.11
+      - path_check: "debian-8.11.0-amd64-lxde-CD-1.iso"
+        url: "https://cdimage.debian.org/cdimage/archive/8.11.0/amd64/iso-cd/debian-8.11.0-amd64-lxde-CD-1.iso"
+        checksum: "sha1:ac9b1b6128dc1546583e546520d7fb39e1ec803b"
+
+    vscode_extensions:
+      - ms-python.python
+      - vscoss.vscode-ansible
+      - floone.varnish-vcl
+      - kelvin.vscode-sshfs
+      - ms-azuretools.vscode-azureterraform
+      - ms-azuretools.vscode-docker
+      - davidanson.vscode-markdownlint
+      - kalitaalexey.vscode-rust
+      - ms-vscode.go
+
+    helm: "https://get.helm.sh/helm-v3.1.2-linux-amd64.tar.gz"
+
+
+  tasks:
+#
+# Nvidia about
+#
+    - name: Disable nvidia card
+      shell: if [ $(grub2-editenv - list | grep kernelopts | grep modprobe.blacklist=nouveau | wc -l) -eq 0 ];then grub2-editenv - set kernelopts="$(grub2-editenv - list | grep kernelopts | cut -c 12-) rd.driver.blacklist=nouveau modprobe.blacklist=nouveau nvidia-drm.modeset=1";fi
+      tags:
+        - nvidia
+#
+# Repository about
+#
+    - name: Add some RedHat repo
+      yum_repository:
+        name: "{{ item.name }}"
+        description: "{{ item.desc }}"
+        baseurl: "{{ item.repository }}"
+        gpgkey: "{{ item.key_url }}"
+        gpgcheck: yes
+        enabled: yes
+      with_items: "{{ dnf }}"
+      when: ansible_os_family == "RedHat"
+      tags:
+        - repositories
+
+    - name: Add keys and repositories for Debian
+      apt_key:
+        url: "{{ item.key_url }}"
+      with_items: "{{ apt }}"
+      when: ansible_os_family == "Debian"
+      tags:
+        - repositories
+    - apt_repository:
+        repo: "{{ item.repository }}"
+        state: present
+      with_items: "{{ apt }}"
+      when: ansible_os_family == "Debian"
+      tags:
+        - repositories
+
+#
+# Packages about
+#
+
+    - name: upgrade all packages
+      dnf:
+        name: "*"
+        state: latest
+      when: ansible_os_family == "RedHat"
+      tags:
+        - packages
+
+    - name: Install RedHat packages
+      dnf:
+        name: "{{ dnf_packages }}"
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "RedHat"
+      tags:
+        - packages
+
+    - name: Install Debian packages
+      apt:
+        name: "{{ apt_packages }}"
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+      tags:
+        - packages
+
+    - name: Install common packages for RedHat
+      dnf:
+        name: "{{ packages }}"
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "RedHat"
+      tags:
+        - packages
+
+    - name: Install common packages for Debian
+      apt:
+        name: "{{ packages }}"
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+      tags:
+        - packages
+
+    - name: Delete unwish packages
+      apt:
+        name: "{{ apt_packages_to_remove }}"
+        state: absent
+      when: ansible_os_family == "Debian"
+      tags:
+        - packages
+
+
+    - name: Install .rpm packages from the internet.
+      stat: # Only if not already setup
+        path: "{{ item.path_check }}"
+      register: rpm_install_check
+      with_items: "{{ standalone_rpm_package_urls }}"
+      tags:
+        - packages
+    - dnf:
+        name: "{{ item.item.url }}"
+      when: item.stat.exists  == false and ansible_os_family == "RedHat"
+      with_items: "{{ rpm_install_check.results }}"
+      tags:
+        - packages
+
+    - name: Install .deb packages from the internet.
+      stat: # Only if not already setup
+        path: "{{ item.path_check }}"
+      register: deb_install_check
+      with_items: "{{ standalone_deb_package_urls }}"
+      tags:
+        - packages
+    - apt:
+        deb: "{{ item.item.url }}"
+      when: item.stat.exists  == false and ansible_os_family == "Debian"
+      with_items: "{{ deb_install_check.results }}" 
+      tags:
+        - packages
+
+#
+# Binaries
+#
+
+    - name: Unzip installer
+      unarchive:
+        src: "{{ item }}"
+        dest: /usr/local/bin
+        remote_src: yes
+      with_items: "{{ binaries }}"
+      tags:
+        - binaries
+
+
+#
+# Ssh about
+#
+
+    - name: Configure ssh server
+      lineinfile:
+        dest: "{{item.dest}}"
+        regexp: "{{item.regexp}}"
+        line: "{{item.line}}"
+      with_items:
+        - {dest: '/etc/ssh/sshd_config', regexp: '^PermitRootLogin', line: 'PermitRootLogin no' }
+      notify: Restart local ssh server
+      tags:
+        - ssh
+
+#
+# Users about
+#
+
+    - name: Create owner
+      group:
+        name: "{{ users.owner.group }}"
+      tags:
+        - users
+    - user:
+        name: "{{ users.owner.name }}"
+        group: "{{ users.owner.group }}"
+        append: yes
+        generate_ssh_key: yes
+        #ssh_key_bits: 4096
+        ssh_key_type: ed25519
+        ssh_key_comment: "{{ users.owner.name }}-ed25519"
+        shell: /usr/bin/zsh
+      tags:
+        - users
+    #ssh-keygen -o -a 100 -t ed25519 -f ~/.ssh/id_ed25519 -C "john@example.com"
+
+    #- name: Override ssh key with ed25519 algo.
+    #  openssl_privatekey:
+    #    path: /home/{{ users.owner.name }}/.ssh/id_rsa
+    #    type: ed25519
+    #    force: yes
+
+    - name: Configure sudoers file
+      lineinfile:
+        dest: "{{item.dest}}"
+        regexp: "{{item.regexp}}"
+        line: "{{item.line}}"
+        state: present
+        create: yes
+        owner: root
+        group: root
+        mode: 0640
+      with_items:
+        - {dest: "/etc/sudoers.d/{{ users.owner.name }}", regexp: "^{{ users.owner.name }}", line: "{{ users.owner.name }} ALL=(ALL) NOPASSWD: ALL" }
+      tags:
+        - users
+
+#
+# Python about
+#
+
+    - name: Install requests through pip
+      pip:
+        name: "{{ item }}"
+      with_items:
+        - requests
+        - yml
+        - ntplib
+        - awscli
+      tags:
+        - python
+
+#
+# Docker about
+#
+
+    - name: Allow user to use docker
+      user:
+        name: "{{ users.owner.name }}"
+        groups: docker
+        append: yes
+      tags:
+        - docker
+
+    - name: Clean home docker path for permission
+      file:
+        state: absent
+        path: "/home/{{ users.owner.name }}/.docker/"
+      tags:
+        - docker
+
+    - name: Start and enable docker service
+      sysctl:
+        name: vm.max_map_count
+        value: 262144
+        state: present
+      tags:
+        - docker
+    - service:
+        name: docker
+        state: started
+        enabled: Yes
+      tags:
+        - docker
+
+    - name: Install docker compose through pip
+      pip:
+        name: docker-compose
+      tags:
+        - docker
+
+
+#
+# Git about
+#
+
+    - name: Create git directory
+      file:
+        state: directory
+        path: "/home/{{ users.owner.name }}/git"
+        owner: "{{ users.owner.name }}"
+        group: "{{ users.owner.group }}"
+        mode: 0750
+      tags:
+        - git
+
+#
+# Visual studio code about
+#
+
+    - name: Check extensions already setup 1/2
+      find:
+        paths: "/home/{{ users.owner.name }}/.vscode/extensions"
+        patterns: "*"
+        recurse: no
+        file_type: directory
+      register: vscode_ext
+      tags:
+        - vscode
+
+    - name: Check extensions already setup 2/2
+      set_fact:
+        vscode_ext_list: "{{ vscode_ext_list }} {{ item.path }}"
+      with_items:
+        - "{{ vscode_ext.files }}"
+      vars:
+        vscode_ext_list: []
+      tags:
+        - vscode
+
+    - name: Already setup extensions
+      debug:
+        msg: "{{ vscode_ext_list }}"
+      when: vscode_ext_list is defined
+      tags:
+        - vscode
+
+    - name: Setup new VScode extensions
+      shell: "code --install-extension {{ item }}"
+      with_items:
+        - "{{ vscode_extensions }}"
+      when: vscode_ext_list is defined and not( vscode_ext_list is search(item) )
+      become: true
+      become_user: "{{ users.owner.name }}"
+      tags:
+        - vscode
+
+    - name: Setup VScode extensions if there is no one already setuped
+      shell: "code --install-extension {{ item }}"
+      with_items:
+        - "{{ vscode_extensions }}"
+      when: vscode_ext_list is not defined
+      become: true
+      become_user: "{{ users.owner.name }}"
+      tags:
+        - vscode
+
+#
+# Minikube (Kubernetes) about
+#
+
+    - name: User minikube
+      user:
+        name: "{{ users.owner.name }}"
+        groups: libvirt
+        append: yes
+      tags:
+        - minikube
+
+    - name: Enable libvirtd for kvm2
+      service:
+        name: libvirtd
+        state: started
+        enabled: Yes
+      tags:
+        - minikube
+
+    - name: Download kvm2 binary
+      get_url:
+        url: https://storage.googleapis.com/minikube/releases/latest/docker-machine-driver-kvm2
+        dest: /usr/local/bin/docker-machine-driver-kvm2
+        mode: 0770
+        owner: "{{ users.owner.name }}"
+        group: "{{ users.owner.group }}"
+      tags:
+        - minikube
+        
+
+    - name: Download Minikube binary
+      get_url:
+        url: https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+        dest: /usr/bin/minikube
+        mode: 0770
+        owner: "{{ users.owner.name }}"
+        group: "{{ users.owner.group }}"
+      tags:
+        - minikube
+
+#
+# Kubectx/ns about
+#
+
+    - name: 
+      get_url:
+        url: "{{ item.url }}"
+        dest: "/usr/local/bin/{{ item.bin }}"
+        mode: '0777'
+      with_items:
+        - { bin: kubectx, url: "https://raw.githubusercontent.com/ahmetb/kubectx/master/kubectx" }
+        - { bin: kubens, url: "https://raw.githubusercontent.com/ahmetb/kubectx/master/kubens" }
+      tags:
+        - kubectx
+
+#
+# Helm
+#
+
+    - name: Check helm
+      stat: # Only if not already setup
+        path: "/usr/local/bin/helm"
+      register: helmInstaller
+      tags:
+        - helm
+    - name: Unzip helm installer
+      unarchive:
+        src: "{{ helm }}"
+        dest: /tmp
+        remote_src: yes
+      when: helmInstaller.stat.exists == false
+      register: helmInstaller
+      tags:
+        - helm
+    - shell: mv /tmp/linux-amd64/helm /usr/local/bin/helm
+      when: helmInstaller.changed
+      tags:
+        - helm      
+
+#
+# Gnome about
+#
+
+    - name: Disable emoji hotkey
+      shell: gsettings set org.freedesktop.ibus.panel.emoji hotkey \[\]
+      become: true
+      become_user: "{{ users.owner.name }}"
+      tags:
+        - gnome
+
+    - name: Set markup in dash
+      shell: gsettings set org.gnome.shell favorite-apps \[\'firefox.desktop\',\'terminator.desktop\',\'code.desktop\',\'slack.desktop\',\'steam.desktop\',\'org.gnome.software.desktop\'\]
+      become: true
+      become_user: "{{ users.owner.name }}"
+      tags:
+        - gnome
+
+    - name: Create gnome extentions directory
+      file:
+        state: directory
+        path: "/home/{{ users.owner.name }}/.local/share/gnome-shell/extensions/"
+        owner: "{{ users.owner.name }}"
+        group: "{{ users.owner.group }}"
+        mode: 0750
+      tags:
+        - gnome
+
+#
+# Autostart app about
+#
+    
+    - name: Create .config/autostart directory
+      file:
+        state: directory
+        path: "/home/{{ users.owner.name }}/.config/autostart"
+        owner: "{{ users.owner.name }}"
+        group: "{{ users.owner.group }}"
+        mode: 0750
+      tags:
+        - app-autostart
+    
+    - name: Create desktop files
+      blockinfile:
+        path: "/home/{{ users.owner.name }}/.config/autostart/{{ item.name }}.desktop"
+        block: |
+          [Desktop Entry]
+          Type=Application
+          Exec="{{ item.exec }}"  # --no-startup-window
+          X-GNOME-Autostart-enabled=true
+          Name="{{ item.name }}" 
+        state: present
+        create: yes
+        owner: "{{ users.owner.name }}"
+        group: "{{ users.owner.group }}"
+        mode: 0640
+      with_items:
+        - { name: 'slack', exec: '/usr/bin/slack' }
+        - { name: 'vscode', exec: '/usr/bin/code' }
+        - { name: 'firefox', exec: '/usr/bin/firefox' }
+        - { name: 'terminator', exec: '/usr/bin/terminator' }
+        - { name: 'discord', exec: '/usr/bin/Discord' }
+        - { name: 'steam', exec: '/usr/bin/steam' }
+      tags:
+      - app-autostart
+
+#
+# Auto move app at startup
+#
+
+    - name: Check automove gnome extention
+      stat: # Only if not already setup
+        path: "/home/{{ users.owner.name }}/.local/share/gnome-shell/extensions/auto-move-windows@gnome-shell-extensions.gcampax.github.com"
+      register: automoveSetuped
+      tags:
+        - app-automove
+    
+    - name: Download automove gnome extention
+      get_url:
+        url: https://extensions.gnome.org/extension-data/auto-move-windowsgnome-shell-extensions.gcampax.github.com.v41.shell-extension.zip
+        dest: /tmp/auto-move-windowsgnome-shell.zip
+      when: automoveSetuped.stat.exists == false
+      become: true
+      become_user: "{{ users.owner.name }}"
+      tags:
+        - app-automove
+
+    - name: Install automove gnome extention
+      shell: "gnome-extensions install /tmp/auto-move-windowsgnome-shell.zip && killall -HUP gnome-shell && gnome-extensions enable auto-move-windowsgnome-shell"
+      when: automoveSetuped.stat.exists == false
+      become: true
+      become_user: "{{ users.owner.name }}"
+      tags:
+        - app-automove
+
+    - name: Install automove gnome extention
+      shell: "gnome-extensions enable auto-move-windows@gnome-shell-extensions.gcampax.github.com"
+      become: true
+      become_user: "{{ users.owner.name }}"
+      tags:
+        - app-automove
+        
+    - name: Config automove gnome extention
+      dconf:
+        key: "/org/gnome/shell/extensions/auto-move-windows/application-list"
+        value: "['slack.desktop:1','firefox.desktop:2','terminator.desktop:3','code.desktop:4','discord.desktop:5','steam.desktop:6']"
+        state: present
+      become: true
+      become_user: "{{ users.owner.name }}"
+      tags:
+        - wallpapers
+        
+#
+# Zsh about
+#
+
+#
+# Oh my zsh
+#
+
+    - name: Install oh-my-zsh
+      stat: # Only if not already setup
+        path: "/home/{{ users.owner.name }}/.oh-my-zsh"
+      register: ohmyzsh_check
+      tags:
+        - ohmyzsh
+    - shell: sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+      when: ohmyzsh_check.stat.exists == false
+      become: true
+      become_user: "{{ users.owner.name }}"
+      tags:
+        - ohmyzsh
+    
+    - name: Add ohmyzsh plugins
+      lineinfile:
+        path: "/home/{{ users.owner.name }}/.zshrc"
+        regexp: "^plugins="
+        line: "plugins=(git kube-ps1)"
+      tags:
+        - ohmyzsh
+
+
+#
+# Terminator about
+#
+
+    - name: 
+      file: 
+        path: "/home/{{ users.owner.name }}/.config/terminator/config"
+        state: absent
+
+    - name: terminator config file
+      blockinfile:
+        path: "/home/{{ users.owner.name }}/.config/terminator/config"
+        block: |
+          [global_config]
+            borderless = True
+            inactive_color_offset = 0.805555555556
+            window_state = maximise
+          [profiles]
+            [[default]]
+              background_color = "#282828"
+              background_darkness = 0.75
+              background_type = transparent
+              cursor_color = "#2e3436"
+              foreground_color = "#ebdbb2"
+              scrollback_lines = 50000
+              show_titlebar = False
+        
+        marker: ""
+        create: true
+        owner: "{{ users.owner.name }}"
+        group: "{{ users.owner.name }}"
+
+#
+# Wallpapers about
+#
+
+    - name: Create wallpapers directory
+      file:
+        state: directory
+        path: "/home/{{ users.owner.name }}/Images/Wallpapers"
+        owner: "{{ users.owner.name }}"
+        group: "{{ users.owner.group }}"
+        mode: 0750
+      tags:
+        - wallpapers
+
+    - name: Download wallpapers
+      get_url:
+        url: "{{ item }}"
+        dest: "/home/{{ users.owner.name }}/Images/Wallpapers"
+        mode: 0640
+        owner: "{{ users.owner.name }}"
+        group: "{{ users.owner.group }}"
+      with_items: "{{ wallpaper_urls }}"
+      ignore_errors: yes
+      tags:
+        - wallpapers
+
+    - name: Check backslide gnome extention
+      stat: # Only if not already setup
+        path: "/usr/share/gnome-shell/extensions/backslide@codeisland.org"
+      register: backslideSetuped
+      tags:
+        - wallpapers
+
+    - name: Clone BackSlide gnome extention
+      git:
+        repo: https://LukasKnuth@bitbucket.org/LukasKnuth/backslide.git
+        dest: /tmp/backslide
+        force: true
+      register: backSlideGitClone
+      when: backslideSetuped.stat.exists == false
+      tags:
+        - wallpapers
+
+    - name: Compile backslide schema & enable extention
+      shell: "mkdir -p /usr/share/gnome-shell/extensions/backslide@codeisland.org && glib-compile-schemas /tmp/backslide/backslide@codeisland.org/schemas/ && mv /tmp/backslide/backslide@codeisland.org /usr/local/share/gnome-shell/extensions/backslide@codeisland.org"
+      when: backSlideGitClone.changed
+      tags:
+        - wallpapers
+
+    - name: Reload gnome shell
+      shell: "killall -HUP gnome-shell"
+      when: backSlideGitClone.changed
+      become: true
+      become_user: "{{ users.owner.name }}"
+      tags:
+        - wallpapers
+
+    - name: Enable backslide
+      shell: "gnome-extensions enable backslide@codeisland.org"
+      when: backSlideGitClone.changed
+      become: true
+      become_user: "{{ users.owner.name }}"
+      tags:
+        - wallpapers
+
+    - name: List wallpapers
+      find:
+        paths: /home/{{ users.owner.name }}/Images/Wallpapers
+        patterns: "*"
+      register: wallpapers_file_list
+      tags:
+        - wallpapers
+
+    - name: Init wallpapers list
+      set_fact:
+        wallpapers_list: []
+      tags:
+        - wallpapers
+
+    
+    - set_fact:
+        wallpapers_list: "{{ wallpapers_list + [ item.path | quote ] }}"
+      with_items: "{{ wallpapers_file_list.files }}"
+      tags:
+        - wallpapers   
+        
+    - name: Load wallpapers in backslide
+      dconf:
+        key: "/org/gnome/shell/extensions/backslide/image-list"
+        value: "[\"{{ wallpapers_list | join('\",\"') }}\"]"
+        state: present
+      become: true
+      become_user: "{{ users.owner.name }}"
+      tags:
+        - wallpapers
+      
+#
+# Handlers
+#
+
+  handlers:
+    - name: Restart local ssh server
+      service:
+        name: sshd
+        state: restarted
+
+
+
+## org.gnome.desktop.screensaver
+## org.fedorahosted.background-logo-extension
+## 
