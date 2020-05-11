@@ -69,6 +69,11 @@
       - wmctrl # move app to specific workspace
       - steam
       - discord
+      - code
+      - skypeforlinux
+      - VirtualBox
+      - zoom
+      - slack
 
     apt_packages_to_remove:
       - ubuntu-web-launchers
@@ -82,20 +87,20 @@
 
     standalone_rpm_package_urls:
       # VsCode
-      - path_check: "/usr/bin/code"
-        url: "https://go.microsoft.com/fwlink/?LinkID=760867"
+      #- path_check: "/usr/bin/code"
+      #  url: "https://go.microsoft.com/fwlink/?LinkID=760867"
       # Slack
-      - path_check: "/usr/bin/slack"
-        url: "https://downloads.slack-edge.com/linux_releases/slack-3.4.0-0.1.fc21.x86_64.rpm"
+      #- path_check: "/usr/bin/slack"
+      #  url: "https://downloads.slack-edge.com/linux_releases/slack-3.4.0-0.1.fc21.x86_64.rpm"
       # VirtualBox
-      - path_check: "/usr/bin/virtualbox"
-        url: "https://download.virtualbox.org/virtualbox/6.1.4/VirtualBox-6.1-6.1.4_136177_fedora31-1.x86_64.rpm"
+      #- path_check: "/usr/bin/virtualbox"
+      #  url: "https://download.virtualbox.org/virtualbox/6.1.4/VirtualBox-6.1-6.1.4_136177_fedora31-1.x86_64.rpm"
       # Zoom
-      - path_check: "/usr/bin/zoom"
-        url: "https://d11yldzmag5yn.cloudfront.net/prod/3.5.385850.0413/zoom_x86_64.rpm?_x_zm_rtaid=8n8mqmS5TB-ABgVc1_hsUg.1587216394577.844d68c02c5b6dad67c05d8c622db398&_x_zm_rhtaid=8"
+      #- path_check: "/usr/bin/zoom"
+      #  url: "https://d11yldzmag5yn.cloudfront.net/prod/3.5.385850.0413/zoom_x86_64.rpm?_x_zm_rtaid=8n8mqmS5TB-ABgVc1_hsUg.1587216394577.844d68c02c5b6dad67c05d8c622db398&_x_zm_rhtaid=8"
       # Skype
-      - path_check: "/usr/bin/skypeforlinux"
-        url: "https://repo.skype.com/latest/skypeforlinux-64.rpm"
+      #- path_check: "/usr/bin/skypeforlinux"
+      #  url: "https://repo.skype.com/latest/skypeforlinux-64.rpm"
 
     standalone_deb_package_urls:
       # Chef-dk
@@ -108,16 +113,16 @@
       - path_check: "/usr/bin/code"
         url: "https://go.microsoft.com/fwlink/?LinkID=760868"
       # VirtualBox
-      - path_check: "/usr/bin/virtualbox"
-        url: "https://download.virtualbox.org/virtualbox/6.1.4/virtualbox-6.1_6.1.4-136177~Debian~buster_amd64.deb"
+      #- path_check: "/usr/bin/virtualbox"
+      #  url: "https://download.virtualbox.org/virtualbox/6.1.4/virtualbox-6.1_6.1.4-136177~Debian~buster_amd64.deb"
 
     dnf:
       # Docker-ce
       - name: "docker-ce"
         desc: "docker-ce stable"
         key_url: "https://download.docker.com/linux/{{ansible_distribution | lower}}/gpg"
-        repository: "https://download.docker.com/linux/{{ansible_distribution | lower}}/{{ ansible_distribution_major_version }}/{{ansible_architecture}}/test" # stable
-      #  repository: "https://download.docker.com/linux/{{ansible_distribution | lower}}/{{ansible_distribution_major_version}}/{{ansible_architecture}}/test" # stable
+        repository: "https://download.docker.com/linux/{{ansible_distribution | lower}}/31/{{ansible_architecture}}/stable" # stable
+        #repository: "https://download.docker.com/linux/{{ansible_distribution | lower}}/{{ ansible_distribution_major_version }}/{{ansible_architecture}}/test" # stable
       # Kubernetes
       - name: "kubernetes"
         desc: "kubernetes stable"
@@ -274,19 +279,19 @@
         - packages
 
 
-    - name: Install .rpm packages from the internet.
-      stat: # Only if not already setup
-        path: "{{ item.path_check }}"
-      register: rpm_install_check
-      with_items: "{{ standalone_rpm_package_urls }}"
-      tags:
-        - packages
-    - dnf:
-        name: "{{ item.item.url }}"
-      when: item.stat.exists  == false and ansible_os_family == "RedHat"
-      with_items: "{{ rpm_install_check.results }}"
-      tags:
-        - packages
+#    - name: Install .rpm packages from the internet.
+#      stat: # Only if not already setup
+#        path: "{{ item.path_check }}"
+#      register: rpm_install_check
+#      with_items: "{{ standalone_rpm_package_urls }}"
+#      tags:
+#        - packages
+#    - dnf:
+#        name: "{{ item.item.url }}"
+#      when: item.stat.exists  == false and ansible_os_family == "RedHat"
+#      with_items: "{{ rpm_install_check.results }}"
+#      tags:
+#        - packages
 
     - name: Install .deb packages from the internet.
       stat: # Only if not already setup
@@ -809,7 +814,7 @@
         - wallpapers
 
     - name: Compile backslide schema & enable extention
-      shell: "mkdir -p /usr/share/gnome-shell/extensions/backslide@codeisland.org && glib-compile-schemas /tmp/backslide/backslide@codeisland.org/schemas/ && mv /tmp/backslide/backslide@codeisland.org /usr/local/share/gnome-shell/extensions/backslide@codeisland.org"
+      shell: "mkdir -p /usr/share/gnome-shell/extensions/backslide@codeisland.org && glib-compile-schemas /tmp/backslide/backslide@codeisland.org/schemas/ && mv /tmp/backslide/backslide@codeisland.org /usr/share/gnome-shell/extensions/backslide@codeisland.org"
       when: backSlideGitClone.changed
       tags:
         - wallpapers
