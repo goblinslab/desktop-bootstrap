@@ -74,8 +74,9 @@
       - VirtualBox
       - zoom
       - slack
+      - powerline-fonts
 
-    apt_packages_to_remove:
+    packages_to_remove:
       - ubuntu-web-launchers
       - empathy-common
       - gbrainy
@@ -155,8 +156,14 @@
     wallpaper_urls: [
       "https://img.hebus.com/hebus_2014/08/22/1408726752_36368.jpg",
       "https://img.hebus.com/hebus_2010/10/29/101029225433_85.jpg",
-      "https://img.hebus.com/tmp/hebus_1920x1200_1587821654_8553.jpg",
-      "https://img.hebus.com/tmp/hebus_1920x1200_1587821686_8545.jpg"
+      "https://img.hebus.com/hebus_2010/10/11/101011102230_2077.jpg",
+      "https://img.hebus.com/hebus_2011/03/12/110312190652_42.jpg",
+      "https://img.hebus.com/hebus_2010/12/05/101205213850_33.jpg",
+      "https://img.hebus.com/hebus_2012/11/26/1353885301_26780.jpg",
+      "https://img.hebus.com/hebus_2013/02/17/1361139774_19633.jpg",
+      "https://img.hebus.com/hebus_2012/05/03/1336007701_42912.jpg",
+      "https://img.hebus.com/hebus_2012/05/11/1336709702_17905.jpg",
+      "https://img.hebus.com/hebus_2012/04/30/1335756601_78114.jpg"
     ]
 
     isos:
@@ -177,8 +184,10 @@
       - ms-azuretools.vscode-azureterraform
       - ms-azuretools.vscode-docker
       - davidanson.vscode-markdownlint
-      - kalitaalexey.vscode-rust
+      - rust-lang.rust
       - ms-vscode.go
+      - hediet.vscode-drawio
+      - msjsdiag.vscode-react-native
 
     helm: "https://get.helm.sh/helm-v3.1.2-linux-amd64.tar.gz"
 
@@ -227,54 +236,32 @@
 #
 
     - name: upgrade all packages
-      dnf:
+      package:
         name: "*"
         state: latest
-      when: ansible_os_family == "RedHat"
       tags:
         - packages
 
     - name: Install RedHat packages
-      dnf:
+      package:
         name: "{{ dnf_packages }}"
         state: present
         update_cache: yes
-      when: ansible_os_family == "RedHat"
-      tags:
-        - packages
-
-    - name: Install Debian packages
-      apt:
-        name: "{{ apt_packages }}"
-        state: present
-        update_cache: yes
-      when: ansible_os_family == "Debian"
       tags:
         - packages
 
     - name: Install common packages for RedHat
-      dnf:
+      package:
         name: "{{ packages }}"
         state: present
         update_cache: yes
-      when: ansible_os_family == "RedHat"
-      tags:
-        - packages
-
-    - name: Install common packages for Debian
-      apt:
-        name: "{{ packages }}"
-        state: present
-        update_cache: yes
-      when: ansible_os_family == "Debian"
       tags:
         - packages
 
     - name: Delete unwish packages
-      apt:
-        name: "{{ apt_packages_to_remove }}"
+      package:
+        name: "{{ packages_to_remove }}"
         state: absent
-      when: ansible_os_family == "Debian"
       tags:
         - packages
 
@@ -513,8 +500,17 @@
 # Gulp about
 #
 
+    - name: Check helm
+      stat: # Only if not already setup
+        path: "/usr/local/bin/gulp"
+      register: gulpInstaller
+      tags:
+        - gulp
     - name: Install Gulp
       shell: npm install gulp-cli -g
+      when: gulpInstaller.stat.exists == false
+      tags:
+        - gulp
 
 #
 # Minikube (Kubernetes) about
@@ -661,52 +657,6 @@
         - { name: 'steam', exec: '/usr/bin/steam' }
       tags:
       - app-autostart
-
-#
-# Auto move app at startup
-#
-
-    - name: Check automove gnome extention
-      stat: # Only if not already setup
-        path: "/home/{{ users.owner.name }}/.local/share/gnome-shell/extensions/auto-move-windows@gnome-shell-extensions.gcampax.github.com"
-      register: automoveSetuped
-      tags:
-        - app-automove
-    
-    - name: Download automove gnome extention
-      get_url:
-        url: https://extensions.gnome.org/extension-data/auto-move-windowsgnome-shell-extensions.gcampax.github.com.v41.shell-extension.zip
-        dest: /tmp/auto-move-windowsgnome-shell.zip
-      when: automoveSetuped.stat.exists == false
-      become: true
-      become_user: "{{ users.owner.name }}"
-      tags:
-        - app-automove
-
-    - name: Install automove gnome extention
-      shell: "gnome-extensions install /tmp/auto-move-windowsgnome-shell.zip && killall -HUP gnome-shell && gnome-extensions enable auto-move-windowsgnome-shell"
-      when: automoveSetuped.stat.exists == false
-      become: true
-      become_user: "{{ users.owner.name }}"
-      tags:
-        - app-automove
-
-    - name: Install automove gnome extention
-      shell: "gnome-extensions enable auto-move-windows@gnome-shell-extensions.gcampax.github.com"
-      become: true
-      become_user: "{{ users.owner.name }}"
-      tags:
-        - app-automove
-        
-    - name: Config automove gnome extention
-      dconf:
-        key: "/org/gnome/shell/extensions/auto-move-windows/application-list"
-        value: "['slack.desktop:1','firefox.desktop:2','terminator.desktop:3','code.desktop:4','discord.desktop:5','steam.desktop:6']"
-        state: present
-      become: true
-      become_user: "{{ users.owner.name }}"
-      tags:
-        - wallpapers
         
 #
 # Zsh about
@@ -734,6 +684,15 @@
         path: "/home/{{ users.owner.name }}/.zshrc"
         regexp: "^plugins="
         line: "plugins=(git kube-ps1)"
+      tags:
+        - ohmyzsh
+    
+    - name: Update ohmyzsh theme
+      lineinfile:
+        path: "/home/{{ users.owner.name }}/.zshrc"
+        regexp: "^ZSH_THEME="
+        line: "ZSH_THEME=\"agnoster\""
+      register: "ohmyzshUpdated"
       tags:
         - ohmyzsh
 
@@ -814,18 +773,18 @@
         - wallpapers
 
     - name: Compile backslide schema & enable extention
-      shell: "mkdir -p /usr/share/gnome-shell/extensions/backslide@codeisland.org && glib-compile-schemas /tmp/backslide/backslide@codeisland.org/schemas/ && mv /tmp/backslide/backslide@codeisland.org /usr/share/gnome-shell/extensions/backslide@codeisland.org"
+      shell: "mkdir -p /usr/share/gnome-shell/extensions/ && glib-compile-schemas /tmp/backslide/backslide@codeisland.org/schemas/ && mv /tmp/backslide/backslide@codeisland.org /usr/share/gnome-shell/extensions/backslide@codeisland.org && rm -Rf /tmp/backslide/"
       when: backSlideGitClone.changed
       tags:
         - wallpapers
 
-    - name: Reload gnome shell
-      shell: "killall -HUP gnome-shell"
-      when: backSlideGitClone.changed
-      become: true
-      become_user: "{{ users.owner.name }}"
-      tags:
-        - wallpapers
+    #- name: Reload gnome shell
+    #  shell: "killall -HUP gnome-shell"
+    #  when: backSlideGitClone.changed
+    #  become: true
+    #  become_user: "{{ users.owner.name }}"
+    #  tags:
+    #    - wallpapers
 
     - name: Enable backslide
       shell: "gnome-extensions enable backslide@codeisland.org"
@@ -866,6 +825,45 @@
       tags:
         - wallpapers
       
+#
+# Auto move app at startup
+#
+
+    - name: Check automove gnome extention
+      stat: # Only if not already setup
+        path: "/home/{{ users.owner.name }}/.local/share/gnome-shell/extensions/auto-move-windows@gnome-shell-extensions.gcampax.github.com"
+      register: automoveSetuped
+      tags:
+      - app-automove
+
+    - name: Download automove gnome extention
+      get_url:
+        url: https://extensions.gnome.org/extension-data/auto-move-windowsgnome-shell-extensions.gcampax.github.com.v41.shell-extension.zip
+        dest: /tmp/auto-move-windowsgnome-shell.zip
+      when: automoveSetuped.stat.exists == false
+      become: true
+      become_user: "{{ users.owner.name }}"
+      tags:
+        - app-automove
+
+    - name: Config automove gnome extention
+      dconf:
+        key: "/org/gnome/shell/extensions/auto-move-windows/application-list"
+        value: "['slack.desktop:1','firefox.desktop:2','terminator.desktop:3','code.desktop:4','discord.desktop:5','steam.desktop:6']"
+        state: present
+      become: true
+      become_user: "{{ users.owner.name }}"
+      tags:
+        - wallpapers
+
+    - name: Install automove gnome extention
+      shell: "nohup gnome-extensions install /tmp/auto-move-windowsgnome-shell.zip && killall -HUP gnome-shell && gnome-extensions enable auto-move-windows@gnome-shell-extensions.gcampax.github.com"
+      when: automoveSetuped.stat.exists == false
+      become: true
+      become_user: "{{ users.owner.name }}"
+      tags:
+        - app-automove
+
 #
 # Handlers
 #
